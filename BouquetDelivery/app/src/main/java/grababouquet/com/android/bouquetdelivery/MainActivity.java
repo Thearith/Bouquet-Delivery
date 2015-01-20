@@ -3,10 +3,13 @@ package grababouquet.com.android.bouquetdelivery;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v7.app.ActionBarActivity;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -15,19 +18,39 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import grababouquet.com.android.http.HttpManager;
+import grababouquet.com.android.http.RequestPackage;
+import grababouquet.com.android.model.User;
+import grababouquet.com.android.parser.UserParser;
+
 
 public class MainActivity extends ActionBarActivity implements
         View.OnClickListener{
 
     private static final int ID_DIGITS = 9;
 
+    private static final String URI_CHECKORDER = "http://www.grababouquet.com/delivery/check.json";
+    private static final String CHECKORDER_PARAM_ID = "order_number";
+
     private EditText deliveryIDEditText;
     private Button startDeliveryButton;
+
+    String deliveryId;
+
+    List<MyTask> tasks;
+
+    private AlertDialog.Builder builder;
+    private View dialogView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        tasks = new ArrayList<>();
 
         deliveryIDEditText = (EditText) findViewById(R.id.deliveryIDEditText);
         startDeliveryButton = (Button) findViewById(R.id.startDeliveryButton);
@@ -56,40 +79,68 @@ public class MainActivity extends ActionBarActivity implements
 
     public void onClick(View v) {
         if(v.getId() == R.id.startDeliveryButton) {
-            String deliveryId = deliveryIDEditText.getText().toString();
-            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            deliveryId = deliveryIDEditText.getText().toString();
+            requestUserFeed(deliveryId);
+        }
+    }
+
+    private void requestUserFeed (String deliveryID) {
+        String uri = URI_CHECKORDER;
+        RequestPackage p = new RequestPackage();
+        p.setMethod("GET");
+        p.setUri(uri);
+        p.setParam(CHECKORDER_PARAM_ID, deliveryID);
+
+        MyTask task = new MyTask();
+        task.execute(p);
+    }
+
+    private void updateDisplay(User user) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        if(user != null) {
             LayoutInflater inflater = (LayoutInflater)
                     getSystemService(Context.LAYOUT_INFLATER_SERVICE);
             View view = inflater.inflate(R.layout.confirm_dialog, null);
-            TextView textView = (TextView) view.findViewById(R.id.deliveryIdTextView);
-            textView.setText(deliveryId);
+
+            ((TextView) view.findViewById(R.id.deliveryIdTextView)).setText(deliveryId);
+            ((TextView) view.findViewById(R.id.receiverNameTextView)).setText(user.getName());
+            ((TextView) view.findViewById(R.id.phoneTextView)).setText(user.getPhoneNumber());
+            ((TextView) view.findViewById(R.id.address1TextView)).setText(user.getAddress());
+            ((TextView) view.findViewById(R.id.zipCodeTextView)).setText(user.getZipCode());
 
             builder.setView(view);
             builder.setCancelable(false);
-            builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener(){
-
+            builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialog, int which) {
                     dialog.dismiss();
                 }
             });
-            builder.setPositiveButton("Confirm", new DialogInterface.OnClickListener(){
 
+            builder.setPositiveButton("Confirm", new DialogInterface.OnClickListener(){
                 @Override
                 public void onClick(DialogInterface dialog, int which) {
                     dialog.dismiss();
                     submitDeliveryId();
+                    finish();
                 }
             });
-
-            builder.create().show();
+        } else {
+            builder.setTitle(getResources().getString(R.string.delivery_id_not_found_title));
+            builder.setMessage(getResources().getString(R.string.delivery_id_not_found));
+            builder.setNeutralButton("Okay", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    dialog.dismiss();
+                }
+            });
         }
+        builder.create().show();
     }
 
     private void submitDeliveryId() {
-
+        Intent intent = new Intent(MainActivity.this, )
     }
-
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -111,5 +162,31 @@ public class MainActivity extends ActionBarActivity implements
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    private class MyTask extends AsyncTask<RequestPackage, String, User> {
+
+        @Override
+        protected void onPreExecute() {
+            tasks.add(this);
+        }
+
+        @Override
+        protected User doInBackground(RequestPackage... params) {
+            String content = HttpManager.getData(params[0]);
+            Log.d("MainActivity class", content);
+            if(content.equals("{}"))
+                return null;
+            else {
+                User user = UserParser.parseUserFeed(content);
+                return user;
+            }
+        }
+
+        @Override
+        protected void onPostExecute(User user) {
+            tasks.remove(this);
+            updateDisplay(user);
+        }
     }
 }
