@@ -139,7 +139,9 @@ public class MainActivity extends ActionBarActivity implements
     }
 
     private void submitDeliveryId() {
-        Intent intent = new Intent(MainActivity.this, )
+        Intent intent = new Intent(MainActivity.this, GeolocationActivity.class);
+        intent.putExtra(GeolocationActivity.TAG_ID, deliveryId);
+        startActivity(intent);
     }
 
     @Override

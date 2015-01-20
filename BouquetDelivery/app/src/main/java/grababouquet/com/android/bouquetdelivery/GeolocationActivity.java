@@ -8,6 +8,8 @@ import android.view.MenuItem;
 
 public class GeolocationActivity extends ActionBarActivity {
 
+    public final static String TAG_ID = "grababouquet.com.android.bouquetdelivery.geolocation.id";
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
