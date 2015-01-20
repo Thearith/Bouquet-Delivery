@@ -1,7 +1,7 @@
 endpoint: `grababouquet.com`
 
 ### 1. Check ordrer details
-`GET grababouquet.com/delivery/check` 
+`GET grababouquet.com/delivery/check.json` 
 
 Params:
   - `order_number`: INT of 9 digits
