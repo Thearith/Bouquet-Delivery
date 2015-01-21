@@ -10,5 +10,6 @@
     <string name="delivery_id_not_found">The delivery ID is not found.\nTry again\n</string>
     <string name="delivery_id_not_found_title">Delivery ID not found</string>
     <string name="title_activity_geolocation">GeolocationActivity</string>
+    <string name="useful_information">Useful information</string>
 
 </resources>
