@@ -44,6 +44,7 @@ public class MainActivity extends ActionBarActivity implements
     String deliveryId;
 
     List<MyTask> tasks;
+    User user;
 
     private AlertDialog.Builder builder;
     private View dialogView;
@@ -102,8 +103,9 @@ public class MainActivity extends ActionBarActivity implements
         task.execute(p);
     }
 
-    private void updateDisplay(User user) {
+    private void updateDisplay(User userInfo) {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        user = userInfo;
         if(user != null) {
             LayoutInflater inflater = (LayoutInflater)
                     getSystemService(Context.LAYOUT_INFLATER_SERVICE);
@@ -121,6 +123,7 @@ public class MainActivity extends ActionBarActivity implements
                 @Override
                 public void onClick(DialogInterface dialog, int which) {
                     dialog.dismiss();
+                    user = null;
                 }
             });
 
@@ -139,6 +142,7 @@ public class MainActivity extends ActionBarActivity implements
                 @Override
                 public void onClick(DialogInterface dialog, int which) {
                     dialog.dismiss();
+                    user = null;
                 }
             });
         }
@@ -148,6 +152,10 @@ public class MainActivity extends ActionBarActivity implements
     private void submitDeliveryId() {
         Intent intent = new Intent(MainActivity.this, GeolocationActivity.class);
         intent.putExtra(GeolocationActivity.TAG_ID, deliveryId);
+        intent.putExtra(GeolocationActivity.TAG_NAME, user.getName());
+        intent.putExtra(GeolocationActivity.TAG_PHONE, user.getPhoneNumber());
+        intent.putExtra(GeolocationActivity.TAG_ZIPCODE, user.getZipCode());
+        intent.putExtra(GeolocationActivity.TAG_ADDRESS, user.getAddress());
         startActivity(intent);
     }
 
