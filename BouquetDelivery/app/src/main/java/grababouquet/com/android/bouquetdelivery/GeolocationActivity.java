@@ -1,6 +1,7 @@
 package grababouquet.com.android.bouquetdelivery;
 
 import android.content.Intent;
+import android.graphics.drawable.AnimationDrawable;
 import android.location.Address;
 import android.location.Geocoder;
 import android.os.Bundle;
@@ -20,11 +21,14 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapFragment;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
+
+import grababouquet.com.android.gpstracker.GPSTracker;
 
 
 public class GeolocationActivity extends FragmentActivity
@@ -37,14 +41,23 @@ public class GeolocationActivity extends FragmentActivity
     public final static String TAG_ADDRESS = "grababouquet.com.android.bouquetdelivery.geolocation.address";
 
     private ImageView markerImageView;
+    private TextView latTextView;
+    private TextView lngTextView;
     private Button reachDestButton;
     private String zipcode;
+
+    private Timer timer;
+    private TimerTask task;
+
+    private GPSTracker gpsTracker;
+
+    private int minutes = 15 * 1000;
+    private int MAXIMUM_TIME = 15 * 1000;
 
     private static final String LOGTAG = "Maps";
 
     MapFragment mMapFragment;
     GoogleMap mMap;
-    Marker marker;
 
 
     @Override
@@ -70,11 +83,23 @@ public class GeolocationActivity extends FragmentActivity
         zipcode = intent.getStringExtra(TAG_ZIPCODE);
 
         markerImageView = (ImageView) findViewById(R.id.markerImageView);
+        markerImageView.setImageResource(R.drawable.blink);
+        AnimationDrawable frameAnimation = (AnimationDrawable) markerImageView.getDrawable();
+        frameAnimation.start();
+        lngTextView = (TextView) findViewById(R.id.lngTextView);
+        latTextView = (TextView) findViewById(R.id.latTextView);
+
         reachDestButton = (Button) findViewById(R.id.arriveDestButton);
         reachDestButton.setOnClickListener(this);
 
         if (!initMap())
             Toast.makeText(this, "Map not available!", Toast.LENGTH_SHORT).show();
+
+        initializeTimer();
+        gpsTracker = new GPSTracker(GeolocationActivity.this);
+        if(!gpsTracker.canGetLocation()) {
+            gpsTracker.showSettingsAlert();
+        }
     }
 
     private LatLng getLatLng(String zipcode) {
@@ -113,8 +138,6 @@ public class GeolocationActivity extends FragmentActivity
 
     }
 
-
-
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
@@ -141,10 +164,44 @@ public class GeolocationActivity extends FragmentActivity
     public void onMapReady(GoogleMap googleMap) {
         LatLng userLocation = getLatLng(zipcode);
         try {
-            mMap.addMarker(new MarkerOptions().position(userLocation));
+            mMap.addMarker(new MarkerOptions().
+                    position(userLocation));
             mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(userLocation, 15));
         }catch(IllegalArgumentException e) {
             Log.e("GeolocationActivity", "zip code is not valid");
         }
+    }
+
+    private void initializeTimer() {
+
+        timer = new Timer();
+        task = new TimerTask() {
+            @Override
+            public void run() {
+                minutes += 1000;
+
+                if (minutes >= MAXIMUM_TIME) {
+                    minutes = 0;
+                    gpsTracker = new GPSTracker(GeolocationActivity.this);
+
+                    if(gpsTracker.canGetLocation()) {
+                        latTextView.post(new Runnable() {
+                             @Override
+                             public void run() {
+                                 latTextView.setText(String.valueOf(gpsTracker.getLatitude()));
+                             }
+                         });
+                        lngTextView.post(new Runnable() {
+                            @Override
+                            public void run() {
+                                lngTextView.setText(String.valueOf(gpsTracker.getLongitude()));
+                            }
+                        });
+                    }
+                }
+            }
+        };
+
+        timer.scheduleAtFixedRate(task, 0, 1000);
     }
 }

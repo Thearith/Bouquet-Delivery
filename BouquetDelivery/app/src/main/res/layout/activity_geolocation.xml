@@ -116,6 +116,7 @@
                         android:layout_marginLeft="5dp"
                         android:textSize="15sp"
                         android:textStyle="italic"
+                        android:text="124"
                         android:id="@+id/latTextView"/>
 
 
@@ -137,7 +138,8 @@
                         android:textSize="15sp"
                         android:layout_marginLeft="5dp"
                         android:textStyle="italic"
-                        android:id="@+id/longTextView"/>
+                        android:text="124"
+                        android:id="@+id/lngTextView"/>
 
                 </TableRow>
 
@@ -150,7 +152,6 @@
                 android:layout_alignParentTop="true"
                 android:layout_alignParentRight="true"
                 android:layout_alignParentEnd="true"
-                android:src="@drawable/marker"
                 android:layout_marginRight="20dp"/>
 
         </RelativeLayout>
